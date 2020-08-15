@@ -1,10 +1,4 @@
-// Final Project : NewGame.cpp 
-//Author: KETKI MOHIT NAIK , VARSHITHA NALADALA, KARTHIK NARAYAN
-//CPS400.M001.Fall2019.Data Structures and C++ Programming
 
-// Description: Implementation file of NewGame (Child class of BaseGame class)
-
-//////////////////////////////////////////////////////////
 
 #include "NewGame.h"
 #include <stdlib.h>
