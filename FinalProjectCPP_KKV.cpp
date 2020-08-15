@@ -1,10 +1,4 @@
-// Final Project : FinalProjectCPP_KKV.cpp
-//Author: KETKI MOHIT NAIK , VARSHITHA NALADALA, KARTHIK NARAYAN
-//CPS400.M001.Fall2019.Data Structures and C++ Programming
 
-// Description: main function 
-
-//////////////////////////////////////////////////////////
 
 #include <iostream>
 #include <fstream>
