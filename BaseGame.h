@@ -1,10 +1,4 @@
-// Final Project : BaseGame.h
-//Author: KETKI MOHIT NAIK , VARSHITHA NALADALA, KARTHIK NARAYAN
-//CPS400.M001.Fall2019.Data Structures and C++ Programming
 
-// Description: BaseGame header file
-
-//////////////////////////////////////////////////////////
 
 #pragma once
 #include "FilledShapes.h"
