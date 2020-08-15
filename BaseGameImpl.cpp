@@ -1,10 +1,4 @@
-// Final Project : BaseGameimpl.cpp
-//Author: KETKI MOHIT NAIK , VARSHITHA NALADALA, KARTHIK NARAYAN
-//CPS400.M001.Fall2019.Data Structures and C++ Programming
 
-// Description: BaseGame implementation file
-
-//////////////////////////////////////////////////////////
 
 #include "BaseGame.h"
 #include <sstream>
