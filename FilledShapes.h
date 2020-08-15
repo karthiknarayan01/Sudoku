@@ -1,8 +1,7 @@
 ///////////////////////////////////////////////////////////////////////
 // File: FilledShapes.h
 //
-// Author: Joe Waclawski
-// Course: CIS554
+
 // Description: This file defines the class interface for FilledShapes. This class 
 // provides primative capability to draw a diagram with Circles, 
 // Rectangles and Triangles, using one of the various member
