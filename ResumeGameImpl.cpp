@@ -1,10 +1,4 @@
-// Final Project : ResumeGameImpl.cpp
-//Author: KETKI MOHIT NAIK , VARSHITHA NALADALA, KARTHIK NARAYAN
-//CPS400.M001.Fall2019.Data Structures and C++ Programming
 
-// Description: ResumeGame implementation
-
-//////////////////////////////////////////////////////////
 
 #include "ResumeGame.h"
 #include <sstream>
