@@ -1,10 +1,4 @@
-// Final Project : NewGame.h
-//Author: KETKI MOHIT NAIK , VARSHITHA NALADALA, KARTHIK NARAYAN
-//CPS400.M001.Fall2019.Data Structures and C++ Programming
 
-// Description: Header file of NewGame (Child class of BaseGame class)
-
-//////////////////////////////////////////////////////////
 
 #pragma once
 #include <vector>
