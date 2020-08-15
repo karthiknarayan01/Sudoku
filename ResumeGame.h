@@ -1,11 +1,4 @@
 
-// Final Project : ResumeGame.h
-//Author: KETKI MOHIT NAIK , VARSHITHA NALADALA, KARTHIK NARAYAN
-//CPS400.M001.Fall2019.Data Structures and C++ Programming
-
-// Description: Header file of ResumeGame (Child class of BaseGame class)
-
-//////////////////////////////////////////////////////////
 
 #pragma once
 #include "BaseGame.h"
