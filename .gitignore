@@ -1,0 +1,31 @@
+# Visual Studio project files (replaced by Makefile + build.bat)
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Visual Studio build output directories
+Debug/
+Release/
+x64/
+x86/
+
+# Visual Studio local/user-specific files
+.vs/
+*.user
+*.suo
+*.aps
+
+# Compiled object and intermediate files
+*.obj
+*.pch
+*.ipch
+
+# Linker output artifacts
+*.exe
+*.pdb
+*.ilk
+*.exp
+
+# Game save data (runtime file, not source)
+gameStorage.txt

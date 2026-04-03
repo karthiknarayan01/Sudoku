@@ -1,374 +1,228 @@
-
-
 #include "BaseGame.h"
 #include <sstream>
+
+// Returns true if placing val at (row, col) does not conflict with any
+// existing number in the same row, column, or 3x3 box.
 bool BaseGame::validEntry(int row, int col, int val) {
+    if (rowConstraints.count(row) && rowConstraints[row]->count(val))
+        return false;
 
-	if (rowData.find(row) != rowData.end() && (*rowData[row]).find(val) != (*rowData[row]).end())
-		return false;
+    if (colConstraints.count(col) && colConstraints[col]->count(val))
+        return false;
 
-	if (colData.find(col) != colData.end() && (*colData[col]).find(val) != (*colData[col]).end())
-		return false;
+    int boxIdx = getBoxIndex(row, col);
+    if (boxConstraints.count(boxIdx) && boxConstraints[boxIdx]->count(val))
+        return false;
 
-	int cell = getCellNumber(row, col);
-
-	if (cellData.find(cell) != cellData.end() && (*cellData[cell]).find(val) != (*cellData[cell]).end())
-		return false;
-	return true;
+    return true;
 }
 
-int BaseGame::getCellNumber(int row, int col) {
-	if (row >= 0 && row <= 2 && col >= 0 && col <= 2)
-		return 0;
-	if (row >= 0 && row <= 2 && col >= 3 && col <= 5)
-		return 1;
-	if (row >= 0 && row <= 2 && col >= 6 && col <= 8)
-		return 2;
-
-	if (row >= 3 && row <= 5 && col >= 0 && col <= 2)
-		return 3;
-	if (row >= 3 && row <= 5 && col >= 3 && col <= 5)
-		return 4;
-	if (row >= 3 && row <= 5 && col >= 6 && col <= 8)
-		return 5;
-
-	if (row >= 6 && row <= 8 && col >= 0 && col <= 2)
-		return 6;
-	if (row >= 6 && row <= 8 && col >= 3 && col <= 5)
-		return 7;
-	if (row >= 6 && row <= 8 && col >= 6 && col <= 8)
-		return 8;
-
-
+// Maps a (row, col) pair to one of the nine 3x3 box indices using integer
+// division: boxRow = row/3, boxCol = col/3, index = boxRow*3 + boxCol.
+int BaseGame::getBoxIndex(int row, int col) {
+    return (row / 3) * 3 + (col / 3);
 }
 
+// Main game loop. Keeps prompting the player for moves until the board is
+// full. Valid moves are recorded in the constraint maps and persisted to disk.
+// Clears the save file when the game is won.
 void BaseGame::launchGame() {
-	while (!isGameComplete()) {
-		displayUI();
-		vector<int>* userInput = getUserInput();
-		if (validateUserInput(*userInput)) {
-			
-			//(*gameDataRows[(*userInput)[0]])[(*userInput)[1]] = (*userInput)[2];
-			(*this) + *userInput;
-			(*rowData[(*userInput)[0]])[(*userInput)[2]] = 1;
-			(*colData[(*userInput)[1]])[(*userInput)[2]] = 1;
-			(*cellData[getCellNumber((*userInput)[0], (*userInput)[1])])[(*userInput)[2]] = 1;
-			
-			writeGameDateIntoFile();
-		}
+    while (!isGameComplete()) {
+        displayUI();
+        vector<int>* userMove = getUserInput();
 
-		else {
-			errorAction(*userInput);
-		}
-	}
+        if (validateUserInput(*userMove)) {
+            (*this) + *userMove;
 
-	cout << "Congrats ! you have completed the game\n";
+            int row = (*userMove)[0];
+            int col = (*userMove)[1];
+            int val = (*userMove)[2];
 
-	ofptr.close();
-	ofstream os("gameStorage.txt");
-	cin.get();
+            (*rowConstraints[row])[val]                   = 1;
+            (*colConstraints[col])[val]                   = 1;
+            (*boxConstraints[getBoxIndex(row, col)])[val] = 1;
+
+            writeGameDataToFile();
+        } else {
+            errorAction(*userMove);
+        }
+    }
+
+    cout << "Congrats! You have completed the game.\n";
+
+    // Clear the save file so the next run starts a fresh game.
+    outFile.close();
+    ofstream clearFile("gameStorage.txt", ios::trunc);
+    cin.get();
 }
 
-void BaseGame::insertNumberInRectShapes(int number, POINT& p) {
+// Draws the digit number as a series of line segments inside a cell whose
+// top-left corner is at origin. Each case encodes the segment geometry for
+// that digit using pixel offsets relative to origin.
+void BaseGame::insertNumberInRectShapes(int number, POINT& origin) {
+    POINT lineStart, lineEnd;
 
-	POINT start, end;
-	
-	switch (number) {
-	case 1:
-		start.x = p.x + 25;
-		start.y = p.y + 10;
-		end.x = p.x + 25;
-		end.y = p.y + 25;
-		fs.Line(start, end);
-		break;
-	case 2:
-		start.x = p.x + 10;
-		start.y = p.y + 10;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start,end);
+    switch (number) {
+    case 1:
+        lineStart = {origin.x + 25, origin.y + 10};
+        lineEnd   = {origin.x + 25, origin.y + 25};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		start.x = p.x + 10;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
+    case 2:
+        lineStart = {origin.x + 10, origin.y + 10}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		start.x = p.x + 10;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start, end);
+    case 3:
+        lineStart = {origin.x + 10, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 30, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 10}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		break;
-	case 3:
-		start.x = p.x + 10;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
+    case 4:
+        lineStart = {origin.x + 30, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 10, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		start.x = p.x + 30;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start, end);
+    case 5:
+        lineStart = {origin.x + 10, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 30, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 10, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 30, origin.y + 10}; lineEnd = {origin.x + 10, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		start.x = p.x + 10;
-		start.y = p.y + 10;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start, end);
+    case 6:
+        lineStart = {origin.x + 10, origin.y + 10}; lineEnd = {origin.x + 10, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 30, origin.y + 20}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
+    case 7:
+        lineStart = {origin.x + 10, origin.y + 10}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 30, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		break;
-	case 4:
-		start.x = p.x + 30;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
+    case 8:
+        lineStart = {origin.x + 10, origin.y + 10}; lineEnd = {origin.x + 10, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 30, origin.y + 10}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 30}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 10}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        break;
 
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 10;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		break;
-	case 5:
-		start.x = p.x + 10;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-
-		start.x = p.x + 30;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 10;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		start.x = p.x + 30;
-		start.y = p.y + 10;
-		end.x = p.x + 10;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		break;
-	case 6:
-		start.x = p.x + 10;
-		start.y = p.y + 10;
-		end.x = p.x + 10;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
-
-		start.x = p.x + 30;
-		start.y = p.y + 20;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-		
-
-		break;
-	case 7:
-		start.x = p.x + 10;
-		start.y = p.y + 10;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		start.x = p.x + 30;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		break;
-	case 8:
-		start.x = p.x + 10;
-		start.y = p.y + 10;
-		end.x = p.x + 10;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-
-		start.x = p.x + 30;
-		start.y = p.y + 10;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 30;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 10;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
-
-		break;
-	case 9:
-
-		start.x = p.x + 30;
-		start.y = p.y + 10;
-		end.x = p.x + 30;
-		end.y = p.y + 30;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 10;
-		end.x = p.x + 30;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 30;
-		end.y = p.y + 20;
-		fs.Line(start, end);
-
-		start.x = p.x + 10;
-		start.y = p.y + 20;
-		end.x = p.x + 10;
-		end.y = p.y + 10;
-		fs.Line(start, end);
-
-		break;
-
-	}
-
-	
-
+    case 9:
+        lineStart = {origin.x + 30, origin.y + 10}; lineEnd = {origin.x + 30, origin.y + 30};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 10}; lineEnd = {origin.x + 30, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 30, origin.y + 20};
+        graphics.Line(lineStart, lineEnd);
+        lineStart = {origin.x + 10, origin.y + 20}; lineEnd = {origin.x + 10, origin.y + 10};
+        graphics.Line(lineStart, lineEnd);
+        break;
+    }
 }
 
+// Clears the screen and redraws the entire 9x9 grid. Each cell is a filled
+// rectangle; non-zero values are rendered as line-segment digits.
 void BaseGame::displayUI() {
-	system("cls");
-	
-	fs.ClearScreen();
-	fs.SetPenColor(borderColor);
-	fs.SetBrushColor(fillcolor);
-	
-	POINT p;
-	p.x = 5;
-	p.y = 5;
-	for (int i = 0; i < 9; i++) {
-		p.x = 5;
-		for (int j = 0; j < 9; j++) {
-			
-			fs.FilledRectangle(p, 50, 50);	
-			insertNumberInRectShapes((*gameDataRows[i])[j],p);
-			p.x += 50;
-		}
-		p.y += 35;
-	}
-	/*for (int i = 0; i < 9; i++)
-	{
-		for (int j = 0; j < 9; j++)
-		{
-			cout << (*gameDataRows[i])[j] << " ";
-		}
+    system("cls");
+    graphics.ClearScreen();
+    graphics.SetPenColor(gridBorderColor);
+    graphics.SetBrushColor(cellFillColor);
 
-		cout << "\n";
-	}*/
+    POINT cellOrigin;
+    cellOrigin.y = 5;
+    for (int row = 0; row < 9; row++) {
+        cellOrigin.x = 5;
+        for (int col = 0; col < 9; col++) {
+            graphics.FilledRectangle(cellOrigin, 50, 50);
+            insertNumberInRectShapes((*grid[row])[col], cellOrigin);
+            cellOrigin.x += 50;
+        }
+        cellOrigin.y += 35;
+    }
 }
 
+// Reads a move from stdin as three whitespace-separated tokens (row, col, val)
+// and returns them as a heap-allocated three-element vector.
 vector<int>* BaseGame::getUserInput() {
-	string row,col,number;
-	vector<int>* temp = new vector<int>;
-	cin >> row >> col >> number;
-	temp->push_back(stoi(row));
-	temp->push_back(stoi(col));
-	temp->push_back(stoi(number));
-	return temp;
+    string rowStr, colStr, valStr;
+    cin >> rowStr >> colStr >> valStr;
+
+    vector<int>* userMove = new vector<int>;
+    userMove->push_back(stoi(rowStr));
+    userMove->push_back(stoi(colStr));
+    userMove->push_back(stoi(valStr));
+    return userMove;
 }
 
-bool BaseGame::validateUserInput(vector<int> userInput) {
-	return validEntry(userInput[0], userInput[1], userInput[2]);
+// Delegates validation to validEntry using the move components.
+bool BaseGame::validateUserInput(vector<int> userMove) {
+    return validEntry(userMove[0], userMove[1], userMove[2]);
 }
 
+// Returns true if no cell in the grid contains zero.
 bool BaseGame::isGameComplete() {
-	for (int i = 0; i < 9; i++)
-	{
-		for (int j = 0; j < 9; j++)
-		{
-			//cout << (*gameDataRows[i])[j] << "\n";
-			if ((*gameDataRows[i])[j] == 0)
-				return false;
-		}
-	}
-	return true;
+    for (int row = 0; row < 9; row++)
+        for (int col = 0; col < 9; col++)
+            if ((*grid[row])[col] == 0)
+                return false;
+    return true;
 }
 
-void BaseGame::errorAction(vector<int> userInput) {
-	cout << "Invalid data! it violates the game rules \n";
-	//cin.get();
-	cin.get();
+// Prints an error message and waits for the player to press Enter.
+void BaseGame::errorAction(vector<int> userMove) {
+    cout << "Invalid move — it violates the Sudoku rules. Press Enter to try again.\n";
+    cin.get();
 }
 
-void BaseGame::writeGameDateIntoFile() {
-	ofptr.close();
-	ofstream os("gameStorage.txt");
-	ofptr.open("gameStorage.txt");
-	for (int i = 0; i < 9; i++)
-	{
-		for (int j = 0; j < 9; j++)
-		{
-			ofptr << (*gameDataRows[i])[j] << " ";
-		}
-
-		ofptr << "\n";
-	}
-
-	ofptr.flush();
+// Rewrites the entire grid to the save file so the game can be resumed.
+// Each row is written as nine space-separated integers followed by a newline.
+void BaseGame::writeGameDataToFile() {
+    outFile.close();
+    outFile.open("gameStorage.txt", ios::out | ios::trunc);
+    for (int row = 0; row < 9; row++) {
+        for (int col = 0; col < 9; col++)
+            outFile << (*grid[row])[col] << " ";
+        outFile << "\n";
+    }
+    outFile.flush();
 }
 
-
-void BaseGame::operator+(vector<int>& userInput) {
-	(*gameDataRows[(userInput)[0]])[(userInput)[1]] = (userInput)[2];
-
+// Places the value from userMove into the appropriate grid cell.
+void BaseGame::operator+(vector<int>& userMove) {
+    (*grid[userMove[0]])[userMove[1]] = userMove[2];
 }

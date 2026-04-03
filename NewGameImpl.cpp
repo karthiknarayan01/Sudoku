@@ -1,62 +1,51 @@
-
-
 #include "NewGame.h"
-#include <stdlib.h>
-#include <time.h>
+#include <cstdlib>
+#include <ctime>
 
-NewGame::NewGame(string fp) {
-
-		ofptr.open(fp, ios::out | ios::trunc);
-	
-	
+// Opens (and truncates) the save file at filePath for writing.
+NewGame::NewGame(string filePath) {
+    outFile.open(filePath, ios::out | ios::trunc);
 }
 
+// Seeds the RNG, picks one of the built-in puzzles at random, and populates
+// the grid and constraint maps with all pre-filled clue values.
+void NewGame::initializePuzzle() {
+    srand(static_cast<unsigned int>(time(nullptr)));
 
+    // Allocate a zero-filled 9x9 grid.
+    for (int row = 0; row < 9; row++) {
+        vector<int>* rowVec = new vector<int>(9, 0);
+        grid.push_back(rowVec);
+    }
 
-void NewGame::generateNewGame() {
-	srand((unsigned int)time(0));
-	
-	vector<int>* temp;
-	int randomCellValue;
-	// initialize gameDataRows
-	for (int i = 0; i < 9; i++) {
-		temp = new vector<int>();
-		for (int j = 0; j < 9; j++)
-			temp->push_back(0);
-		gameDataRows.push_back(temp);
-	}
+    // Allocate the constraint maps for each row, column, and 3x3 box.
+    for (int i = 0; i < 9; i++) {
+        rowConstraints[i] = new map<int, int>();
+        colConstraints[i] = new map<int, int>();
+        boxConstraints[i] = new map<int, int>();
+    }
 
-	
+    int selectedPuzzleIndex = rand() % PUZZLE_COUNT;
 
-	for (int i = 0; i < 9; i++) {
-		rowData[i] = new map<int, int>();
-		colData[i] = new map<int, int>();
-		cellData[i] = new map<int, int>();
-	}
+    // Copy clues from the selected puzzle into the grid and constraint maps.
+    for (int row = 0; row < 9; row++) {
+        for (int col = 0; col < 9; col++) {
+            int val = puzzleLibrary[selectedPuzzleIndex][row][col];
+            (*grid[row])[col] = val;
 
-	// randomnly selects a game among four games declared in the newGame.h file
-	int tempGame = rand() % 1;
-	// populates the gamedata in gameDataRows variable
-	for (int i = 0; i < 9; i++) {
-		for (int j = 0; j < 9; j++) {
-			
-			(*gameDataRows[i])[j] = randomGame[tempGame][i][j];
-			if (randomGame[tempGame][i][j] != 0) {
-				(*rowData[i])[randomGame[tempGame][i][j]] = 1;
-				(*colData[j])[randomGame[tempGame][i][j]] = 1;
-				(*cellData[getCellNumber(i,j)])[randomGame[tempGame][i][j]] = 1;
-			}
-
-		}
-	}
-
-	
+            if (val != 0) {
+                (*rowConstraints[row])[val]                   = 1;
+                (*colConstraints[col])[val]                   = 1;
+                (*boxConstraints[getBoxIndex(row, col)])[val] = 1;
+            }
+        }
+    }
 }
 
+// Initializes the puzzle and runs the base game loop.
 void NewGame::launchGame() {
-	generateNewGame();
-	// calls the method launchgame in base class
-	BaseGame::launchGame();
-	ofptr.close();
-	ifptr.close();
+    initializePuzzle();
+    BaseGame::launchGame();
+    outFile.close();
+    inFile.close();
 }

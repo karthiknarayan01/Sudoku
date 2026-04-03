@@ -1,44 +1,65 @@
-
-
 #pragma once
 #include "FilledShapes.h"
-#include<map>
-#include<vector>
 #include <fstream>
-#include<iostream>
+#include <iostream>
+#include <map>
+#include <vector>
+
+using namespace std;
+
+// Abstract base class that manages the core Sudoku game logic,
+// including rendering, input handling, validation, and persistence.
 class BaseGame {
-	
 public:
-	// controls the entire game
-	virtual void launchGame();
-	// generates filledshapes and populates each boxes with a number
-	void displayUI();
-	// takes the input from user which he/she enters in console
-	vector<int>* getUserInput();
-	// validates whether the entered value meets the conditions of the game
-	bool validateUserInput(vector<int> userInput);
-	// checks whether all the boxes are full
-	bool isGameComplete();
-	// displays appropriate error message to the user
-	void errorAction(vector<int> userInput);
-	// writes the sudoku grid to a file so that if the user exits the game then it can be used to launch again
-	void writeGameDateIntoFile();
-	// validates the user entry
-	bool validEntry(int row, int col, int val);
-	// gets a cell number in range [1..9] using the rownumber and colnumber
-	int getCellNumber(int row, int col);
-	// auxiliary method used by displayUi method to insert a number in a filled shape
-	void insertNumberInRectShapes(int number,POINT &p);
-	// operator overloadin done here wherein user input is taken and added to the gamedata
-	void operator+( vector<int>& userInput);
+    // Runs the main game loop: renders the board, reads moves, validates,
+    // updates state, and saves progress until the puzzle is solved.
+    virtual void launchGame();
+
+    // Clears the screen and redraws the 9x9 Sudoku grid with current values.
+    void displayUI();
+
+    // Reads a move from the console in "row col value" format and returns it
+    // as a three-element vector: {row, col, value}.
+    vector<int>* getUserInput();
+
+    // Returns true if the given move satisfies all Sudoku constraints.
+    bool validateUserInput(vector<int> userMove);
+
+    // Returns true if every cell in the grid has been filled (no zeros remain).
+    bool isGameComplete();
+
+    // Prints an error message when the player enters an invalid move.
+    void errorAction(vector<int> userMove);
+
+    // Serializes the current grid to the save file so the game can be resumed.
+    void writeGameDataToFile();
+
+    // Returns true if placing val at (row, col) obeys row, column, and box rules.
+    bool validEntry(int row, int col, int val);
+
+    // Maps a (row, col) coordinate to one of the nine 3x3 box indices (0-8).
+    int getBoxIndex(int row, int col);
+
+    // Draws the digit number inside the rectangle whose top-left corner is origin.
+    void insertNumberInRectShapes(int number, POINT& origin);
+
+    // Updates the grid cell at (userMove[0], userMove[1]) with value userMove[2].
+    void operator+(vector<int>& userMove);
+
 protected:
-	vector<vector<int>*> gameDataRows;
-	map<int, map<int,int>*> rowData;
-	map<int, map<int,int>*> colData;
-	map<int, map<int,int>*> cellData;
-	ofstream ofptr;
-	ifstream ifptr;
+    // 9x9 grid; 0 represents an empty cell.
+    vector<vector<int>*> grid;
+
+    // Constraint maps: key = index (0-8), value = set of numbers already placed.
+    map<int, map<int, int>*> rowConstraints;
+    map<int, map<int, int>*> colConstraints;
+    map<int, map<int, int>*> boxConstraints;
+
+    ofstream outFile;
+    ifstream inFile;
+
 private:
-	FilledShapes fs;
-	SHAPE_COLOR borderColor = PURPLE , fillcolor = RED;
+    FilledShapes graphics;
+    SHAPE_COLOR  gridBorderColor = PURPLE;
+    SHAPE_COLOR  cellFillColor   = RED;
 };
