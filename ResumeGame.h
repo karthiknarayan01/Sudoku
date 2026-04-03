@@ -1,14 +1,17 @@
-
-
 #pragma once
 #include "BaseGame.h"
+
+using namespace std;
+
+// Resumes a previously saved Sudoku game by reading the grid state from disk.
 class ResumeGame : public BaseGame {
 public:
-	// takes the location of the gamedata file and then opens a file pointer
-	ResumeGame(string fp);
-	// reads the contents inside the file and populates the gamedata variable
-	void extractGameDataFromFile();
-	// launches the basegame variable
-	void launchGame();
+    // Opens the save file at filePath for reading.
+    ResumeGame(string filePath);
 
+    // Parses the save file to restore the grid and rebuild the constraint maps.
+    void loadGameFromFile();
+
+    // Loads the saved game state and delegates to BaseGame::launchGame().
+    void launchGame();
 };
